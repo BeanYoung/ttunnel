@@ -39,7 +39,9 @@ class Tunnel(TCPServer):
 
     def pipe(self, f, t, p=None):
         fa = f.socket.getpeername()
-        ta = f.socket.getpeername()
+        fa = '%s:%s' % (fa[0], fa[1])
+        ta = t.socket.getpeername()
+        ta = '%s:%s' % (ta[0], ta[1])
 
         def process_data(data):
             app_log.info('from %(from)s to %(to)s: %(size)d' % {
@@ -66,5 +68,7 @@ if __name__ == '__main__':
     parse_command_line()
 
     t = Tunnel(options.secret, options.client_mode, options.backend)
-    t.listen(int(options.listen.split(':')[1]), options.listen.split(':')[0])
+    t.bind(int(options.listen.split(':')[1]), options.listen.split(':')[0],
+           reuse_port=True)
+    t.start()
     IOLoop.current().start()
