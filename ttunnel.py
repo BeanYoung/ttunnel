@@ -5,6 +5,7 @@ from hashlib import md5
 
 from Crypto.Cipher import AES
 from tornado.ioloop import IOLoop
+from tornado.iostream import StreamClosedError
 from tornado.gen import coroutine
 from tornado.log import app_log
 from tornado.tcpclient import TCPClient
@@ -49,10 +50,13 @@ class Tunnel(TCPServer):
                 'to': ta,
                 'size': len(data),
             })
-            if p:
-                t.write(p(data))
-            else:
-                t.write(data)
+            try:
+                if p:
+                    t.write(p(data))
+                else:
+                    t.write(data)
+            except StreamClosedError:
+                pass
 
             if f.closed():
                 t.close()
