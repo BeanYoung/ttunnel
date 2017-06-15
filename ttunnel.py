@@ -67,12 +67,14 @@ if __name__ == '__main__':
     define('secret', default='', help='password used to encrypt the data')
     define('client-mode', default=False, help='if running at client mode')
     define('listen', default=':9001', help='host:port ttunnel listen on')
-    define(
-        'backend', default='127.0.0.1:6400', help='host:port of the backend')
+    define('backend',
+           default='127.0.0.1:6400',
+           help='host:port of the backend')
     parse_command_line()
 
     t = Tunnel(options.secret, options.client_mode, options.backend)
-    t.bind(int(options.listen.split(':')[1]), options.listen.split(':')[0],
+    t.bind(int(options.listen.split(':')[1]),
+           options.listen.split(':')[0],
            reuse_port=True)
     t.start()
     IOLoop.current().start()
