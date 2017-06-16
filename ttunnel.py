@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from hashlib import md5
+from time import time
 
 from Crypto.Cipher import AES
 from tornado.ioloop import IOLoop
@@ -24,9 +25,14 @@ class Tunnel(TCPServer):
     @coroutine
     def handle_stream(self, stream, address):
         try:
+            st = time()
             backend = yield TCPClient().connect(
                 self.backend_host, self.backend_port)
+            app_log.info('It takes %s seconds to connect to %s:%s.'
+                         % (time()-st, self.backend_host, self.backend_port))
         except StreamClosedError:
+            app_log.error('Failed connect to %s:%s within %s seconds.'
+                          % (self.backend_host, self.backend_port, time()-st))
             return
         stream.set_close_callback(backend.close)
         backend.set_close_callback(stream.close)
@@ -57,13 +63,18 @@ class Tunnel(TCPServer):
         @coroutine
         def process_data(data):
             if t.closed():
+                app_log.warning('Write %s data to closed stream %s %s.'
+                                % (len(data), ts, tp))
                 return
             try:
+                st = time()
                 if p:
                     yield t.write(p(data))
                 else:
                     yield t.write(data)
-                app_log.info('%s %s' % (data_direction, len(data)))
+
+                app_log.info('Write %s data within %s seconds. Direction: %s.'
+                             % (len(data), time()-st, data_direction))
             except StreamClosedError:
                 pass
 
@@ -78,6 +89,9 @@ if __name__ == '__main__':
            default='127.0.0.1:6400',
            help='host:port of the backend')
     parse_command_line()
+
+    app_log.info('Starting. From %s to %s.'
+                 % (options.listen, options.backend))
 
     t = Tunnel(options.secret, options.client_mode, options.backend)
     t.bind(int(options.listen.split(':')[1]),
