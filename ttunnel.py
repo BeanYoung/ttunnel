@@ -44,18 +44,19 @@ class Tunnel(TCPServer):
                 streaming_callback=self.pipe(backend, stream, ec.encrypt))
 
     def pipe(self, f, t, p=None):
-        fa = f.socket.getpeername()
-        fa = '%s:%s' % (fa[0], fa[1])
-        ta = t.socket.getpeername()
-        ta = '%s:%s' % (ta[0], ta[1])
+        fp = f.socket.getpeername()
+        fp = '%s:%s' % (fp[0], fp[1])
+        fs = f.socket.getsockname()
+        fs = '%s:%s' % (fs[0], fs[1])
+        tp = t.socket.getpeername()
+        tp = '%s:%s' % (tp[0], tp[1])
+        ts = t.socket.getsockname()
+        ts = '%s:%s' % (ts[0], ts[1])
+        data_direction = ' '.join([fp, fs, ts, tp])
 
         @coroutine
         def process_data(data):
-            app_log.info('from %(from)s to %(to)s: %(size)d' % {
-                'from': fa,
-                'to': ta,
-                'size': len(data),
-            })
+            app_log.info('%s %s' % (data_direction, len(data)))
             try:
                 if p:
                     yield t.write(p(data))
