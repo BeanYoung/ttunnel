@@ -23,8 +23,13 @@ class Tunnel(TCPServer):
 
     @coroutine
     def handle_stream(self, stream, address):
-        backend = yield TCPClient().connect(
-            self.backend_host, self.backend_port)
+        try:
+            backend = yield TCPClient().connect(
+                self.backend_host, self.backend_port)
+        except StreamClosedError:
+            return
+        stream.set_close_callback(backend.close)
+        backend.set_close_callback(stream.close)
         ec = AES.new(self.secret, AES.MODE_CFB, self.secret[:16])
         dc = AES.new(self.secret, AES.MODE_CFB, self.secret[:16])
         if self.client_mode:
@@ -58,11 +63,6 @@ class Tunnel(TCPServer):
                     yield t.write(data)
             except StreamClosedError:
                 pass
-
-            if f.closed() and not t.closed():
-                t.close()
-            if t.closed() and not f.closed():
-                f.close()
 
         return process_data
 
