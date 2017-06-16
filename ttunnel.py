@@ -56,12 +56,14 @@ class Tunnel(TCPServer):
 
         @coroutine
         def process_data(data):
-            app_log.info('%s %s' % (data_direction, len(data)))
+            if t.closed():
+                return
             try:
                 if p:
                     yield t.write(p(data))
                 else:
                     yield t.write(data)
+                app_log.info('%s %s' % (data_direction, len(data)))
             except StreamClosedError:
                 pass
 
