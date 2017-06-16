@@ -44,6 +44,7 @@ class Tunnel(TCPServer):
         ta = t.socket.getpeername()
         ta = '%s:%s' % (ta[0], ta[1])
 
+        @coroutine
         def process_data(data):
             app_log.info('from %(from)s to %(to)s: %(size)d' % {
                 'from': fa,
@@ -52,9 +53,9 @@ class Tunnel(TCPServer):
             })
             try:
                 if p:
-                    t.write(p(data))
+                    yield t.write(p(data))
                 else:
-                    t.write(data)
+                    yield t.write(data)
             except StreamClosedError:
                 pass
 
