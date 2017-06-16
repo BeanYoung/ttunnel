@@ -58,8 +58,11 @@ class Tunnel(TCPServer):
             except StreamClosedError:
                 pass
 
-            if f.closed():
+            if f.closed() and not t.closed():
                 t.close()
+            if t.closed() and not f.closed():
+                f.close()
+
         return process_data
 
 
