@@ -36,18 +36,17 @@ class Tunnel(TCPServer):
             return
         stream.set_close_callback(backend.close)
         backend.set_close_callback(stream.close)
-        ec = AES.new(self.secret, AES.MODE_CFB, self.secret[:16])
-        dc = AES.new(self.secret, AES.MODE_CFB, self.secret[:16])
+        crypto = AES.new(self.secret, AES.MODE_CFB, self.secret[:16])
         if self.client_mode:
             stream.read_until_close(
-                streaming_callback=self.pipe(stream, backend, ec.encrypt))
+                streaming_callback=self.pipe(stream, backend, crypto.encrypt))
             backend.read_until_close(
-                streaming_callback=self.pipe(backend, stream, dc.decrypt))
+                streaming_callback=self.pipe(backend, stream, crypto.decrypt))
         else:
             stream.read_until_close(
-                streaming_callback=self.pipe(stream, backend, dc.decrypt))
+                streaming_callback=self.pipe(stream, backend, crypto.decrypt))
             backend.read_until_close(
-                streaming_callback=self.pipe(backend, stream, ec.encrypt))
+                streaming_callback=self.pipe(backend, stream, crypto.encrypt))
 
     def pipe(self, f, t, p=None):
         fp = f.socket.getpeername()
